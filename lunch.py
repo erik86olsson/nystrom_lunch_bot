@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 from base64 import b64encode
+from zoneinfo import ZoneInfo
 import os
 import re
 
@@ -105,6 +106,17 @@ def fetch_menu():
 
     return "\n".join(result)
 
+def should_send():
+
+    now = datetime.now(
+        ZoneInfo("Europe/Stockholm")
+    )
+
+    return (
+        now.weekday() < 5
+        and now.hour == 7
+        and 30 <= now.minute < 45
+    )
 def send(msg):
 
     title = "Kök Nyström Lunch"
@@ -129,8 +141,14 @@ def send(msg):
     response.raise_for_status()
 
 
-menu = fetch_menu()
+if should_send():
 
-print(menu)
+    menu = fetch_menu()
 
-send(menu)
+    print(menu)
+
+    send(menu)
+
+else:
+
+    print("Inte dags ännu")
