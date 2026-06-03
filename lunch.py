@@ -67,7 +67,12 @@ def fetch_menu():
     ]
 
     result = [f"{day}\n"]
-
+    icons = {
+    "Husman": "🏠",
+    "Världen": "🌍",
+    "Fisk": "🐟",
+    "Vego": "🍃"
+}
     for i, category in enumerate(categories):
 
         pattern = (
@@ -86,9 +91,9 @@ def fetch_menu():
 
             dish = clean(match.group(1))
 
-            result.append(
-                f"\n▪ {category}\n{dish}"
-            )
+           result.append(
+    f"\n{icons[category]} {category}\n{dish}"
+)
 
     return "\n".join(result)
 
