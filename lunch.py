@@ -19,14 +19,13 @@ def fetch_menu():
     html = requests.get(
         URL,
         timeout=20,
-        headers={
-            "User-Agent": "Mozilla/5.0"
-        }
+        headers={"User-Agent": "Mozilla/5.0"}
     ).text
 
     soup = BeautifulSoup(html, "lxml")
 
-    text = clean(soup.get_text("\n"))
+    text = soup.get_text("\n")
+
     text = re.sub(r"\n+", "\n", text)
     text = re.sub(r"[ \t]+", " ", text)
 
@@ -41,30 +40,57 @@ def fetch_menu():
     day = weekdays.get(datetime.today().weekday())
 
     if not day:
-        return "Ingen lunch idag (helg)."
+        return "🍽️ Ingen lunch idag"
 
     start = text.find(day)
 
     if start == -1:
         return "🍽️ Dagens lunch finns ännu inte publicerad."
 
-    next_days = [
-        "Måndag",
-        "Tisdag",
-        "Onsdag",
-        "Torsdag",
-        "Fredag"
-    ]
+    days = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag"]
 
     end = len(text)
 
-    for d in next_days:
+    for d in days:
         pos = text.find(d, start + 20)
 
         if pos > start:
             end = min(end, pos)
 
-    return text[start:end][:1200]
+    menu = text[start:end]
+
+    categories = [
+        "Husman",
+        "Världen",
+        "Fisk",
+        "Vego"
+    ]
+
+    result = [f"🍽️ {day}\n"]
+
+    for i, category in enumerate(categories):
+
+        pattern = (
+            rf"{category}(.*?)(?="
+            + "|".join(categories[i + 1:] + ["$"])
+            + ")"
+        )
+
+        match = re.search(
+            pattern,
+            menu,
+            re.DOTALL
+        )
+
+        if match:
+
+            dish = clean(match.group(1))
+
+            result.append(
+                f"\n▪ {category}\n{dish}"
+            )
+
+    return "\n".join(result)
 
 
 def send(msg):
