@@ -141,7 +141,9 @@ def send(msg):
     response.raise_for_status()
 
 
-if should_send():
+manual_run = os.getenv("GITHUB_EVENT_NAME") == "workflow_dispatch"
+
+if manual_run or should_send():
 
     menu = fetch_menu()
 
