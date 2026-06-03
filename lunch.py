@@ -47,7 +47,13 @@ def fetch_menu():
     if start == -1:
         return "🍽️ Dagens lunch finns ännu inte publicerad."
 
-    days = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag"]
+    days = [
+        "Måndag",
+        "Tisdag",
+        "Onsdag",
+        "Torsdag",
+        "Fredag"
+    ]
 
     end = len(text)
 
@@ -66,13 +72,15 @@ def fetch_menu():
         "Vego"
     ]
 
-    result = [f"{day}\n"]
     icons = {
-    "Husman": "🏠",
-    "Världen": "🌍",
-    "Fisk": "🐟",
-    "Vego": "🍃"
-}
+        "Husman": "🏠",
+        "Världen": "🌍",
+        "Fisk": "🐟",
+        "Vego": "🍃"
+    }
+
+    result = [f"{day}"]
+
     for i, category in enumerate(categories):
 
         pattern = (
@@ -91,12 +99,11 @@ def fetch_menu():
 
             dish = clean(match.group(1))
 
-result.append(
-    f"\n{icons[category]} {category}\n{dish}"
-)
+            result.append(
+                f"\n{icons[category]} {category}\n{dish}"
+            )
 
     return "\n".join(result)
-
 
 def send(msg):
 
