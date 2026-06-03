@@ -3,6 +3,7 @@ import re
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
+from base64 import b64encode
 
 URL = "https://www.koknystrom.se/dagens-lunch/"
 TOPIC = os.environ["NTFY_TOPIC"]
@@ -57,11 +58,14 @@ def fetch_menu():
 
 def send(msg):
 
+    title = "Kök Nyström Lunch"
+
     response = requests.post(
         f"https://ntfy.sh/{TOPIC}",
         data=msg.encode("utf-8"),
         headers={
-            "Title": "Kok Nystrom Lunch",
+            # UTF-8 enligt RFC 2047
+            "Title": f"=?UTF-8?B?{b64encode(title.encode()).decode()}?=",
             "Priority": "4",
             "Tags": "fork_and_knife"
         },
