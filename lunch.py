@@ -60,16 +60,21 @@ def send(msg):
 
     title = "Kök Nyström Lunch"
 
+    encoded_title = (
+        "=?UTF-8?B?"
+        + b64encode(title.encode("utf-8")).decode()
+        + "?="
+    )
+
     response = requests.post(
         f"https://ntfy.sh/{TOPIC}",
         data=msg.encode("utf-8"),
         headers={
-            # UTF-8 enligt RFC 2047
-            "Title": f"=?UTF-8?B?{b64encode(title.encode()).decode()}?=",
+            "Title": encoded_title,
             "Priority": "4",
             "Tags": "fork_and_knife"
         },
-        timeout=20
+        timeout=30
     )
 
     response.raise_for_status()
