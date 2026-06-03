@@ -66,7 +66,7 @@ def send(msg):
         f"https://ntfy.sh/{TOPIC}",
         data=msg.encode("utf-8"),
         headers={
-            "Title": "🍽️ Kök Nyström",
+            "Title": "Kök Nyström",
             "Priority": "4"
         },
         timeout=20
