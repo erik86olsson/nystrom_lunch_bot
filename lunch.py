@@ -27,6 +27,8 @@ def fetch_menu():
     soup = BeautifulSoup(html, "lxml")
 
     text = clean(soup.get_text("\n"))
+    text = re.sub(r"\n+", "\n", text)
+    text = re.sub(r"[ \t]+", " ", text)
 
     weekdays = {
         0: "Måndag",
