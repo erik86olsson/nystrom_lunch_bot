@@ -1,16 +1,11 @@
+import os
+import re
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
-import os
-import re
-
-TOPIC = os.environ["NTFY_TOPIC"]
 
 URL = "https://www.koknystrom.se/dagens-lunch/"
-
-
-def clean(text):
-    return re.sub(r"\s+", " ", text).strip()
+TOPIC = os.environ["NTFY_TOPIC"]
 
 
 def fetch_menu():
@@ -18,16 +13,17 @@ def fetch_menu():
     html = requests.get(
         URL,
         timeout=20,
-        headers={
-            "User-Agent": "Mozilla/5.0"
-        }
+        headers={"User-Agent": "Mozilla/5.0"}
     ).text
 
-    soup = BeautifulSoup(html, "lxml")
+    soup = BeautifulSoup(html, "html.parser")
 
-    text = clean(soup.get_text("\n"))
+    text = soup.get_text("\n")
 
-    weekdays = {
+    text = re.sub(r"\n+", "\n", text)
+    text = re.sub(r"[ \t]+", " ", text)
+
+    dagar = {
         0: "Måndag",
         1: "Tisdag",
         2: "Onsdag",
@@ -35,46 +31,47 @@ def fetch_menu():
         4: "Fredag"
     }
 
-    day = weekdays[datetime.today().weekday()]
+    veckodag = dagar.get(datetime.today().weekday())
 
-    start = text.find(day)
+    if not veckodag:
+        return "Ingen lunch idag (helg)."
 
-    if start == -1:
-        return "🍽️ Dagens lunch finns ännu inte publicerad."
+    match = re.search(
+        rf"{veckodag}.*?(?=(Måndag|Tisdag|Onsdag|Torsdag|Fredag|Priser:|$))",
+        text,
+        re.IGNORECASE | re.DOTALL
+    )
 
-    next_days = [
-        "Måndag",
-        "Tisdag",
-        "Onsdag",
-        "Torsdag",
-        "Fredag"
-    ]
+    if match:
+        menu = match.group(0).strip()
+        return menu[:1500]
 
-    end = len(text)
+    # fallback: ta dagens lunch-rutan
+    start = text.find("Dagens lunch")
 
-    for d in next_days:
-        pos = text.find(d, start + 20)
-        if pos > start:
-            end = min(end, pos)
+    if start >= 0:
+        return text[start:start + 1200]
 
-    return text[start:end][:1200]
+    return "Lunchmenyn kunde inte tolkas."
 
 
 def send(msg):
 
-    requests.post(
+    response = requests.post(
         f"https://ntfy.sh/{TOPIC}",
         data=msg.encode("utf-8"),
         headers={
-            "Title": "Kök Nyström",
-            "Priority": "4"
+            "Title": "Kok Nystrom Lunch",
+            "Priority": "4",
+            "Tags": "fork_and_knife"
         },
         timeout=20
     )
 
+    response.raise_for_status()
+
 
 menu = fetch_menu()
-
 send(menu)
 
-print("Done")
+print(menu)
