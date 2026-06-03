@@ -91,7 +91,7 @@ def fetch_menu():
 
             dish = clean(match.group(1))
 
-           result.append(
+result.append(
     f"\n{icons[category]} {category}\n{dish}"
 )
 
