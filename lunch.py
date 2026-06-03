@@ -1,12 +1,17 @@
-import os
-import re
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 from base64 import b64encode
+import os
+import re
+
+TOPIC = os.environ["NTFY_TOPIC"]
 
 URL = "https://www.koknystrom.se/dagens-lunch/"
-TOPIC = os.environ["NTFY_TOPIC"]
+
+
+def clean(text):
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def fetch_menu():
@@ -14,17 +19,16 @@ def fetch_menu():
     html = requests.get(
         URL,
         timeout=20,
-        headers={"User-Agent": "Mozilla/5.0"}
+        headers={
+            "User-Agent": "Mozilla/5.0"
+        }
     ).text
 
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(html, "lxml")
 
-    text = soup.get_text("\n")
+    text = clean(soup.get_text("\n"))
 
-    text = re.sub(r"\n+", "\n", text)
-    text = re.sub(r"[ \t]+", " ", text)
-
-    dagar = {
+    weekdays = {
         0: "Måndag",
         1: "Tisdag",
         2: "Onsdag",
@@ -32,28 +36,33 @@ def fetch_menu():
         4: "Fredag"
     }
 
-    veckodag = dagar.get(datetime.today().weekday())
+    day = weekdays.get(datetime.today().weekday())
 
-    if not veckodag:
+    if not day:
         return "Ingen lunch idag (helg)."
 
-    match = re.search(
-        rf"{veckodag}.*?(?=(Måndag|Tisdag|Onsdag|Torsdag|Fredag|Priser:|$))",
-        text,
-        re.IGNORECASE | re.DOTALL
-    )
+    start = text.find(day)
 
-    if match:
-        menu = match.group(0).strip()
-        return menu[:1500]
+    if start == -1:
+        return "🍽️ Dagens lunch finns ännu inte publicerad."
 
-    # fallback: ta dagens lunch-rutan
-    start = text.find("Dagens lunch")
+    next_days = [
+        "Måndag",
+        "Tisdag",
+        "Onsdag",
+        "Torsdag",
+        "Fredag"
+    ]
 
-    if start >= 0:
-        return text[start:start + 1200]
+    end = len(text)
 
-    return "Lunchmenyn kunde inte tolkas."
+    for d in next_days:
+        pos = text.find(d, start + 20)
+
+        if pos > start:
+            end = min(end, pos)
+
+    return text[start:end][:1200]
 
 
 def send(msg):
@@ -74,13 +83,14 @@ def send(msg):
             "Priority": "4",
             "Tags": "fork_and_knife"
         },
-        timeout=30
+        timeout=20
     )
 
     response.raise_for_status()
 
 
 menu = fetch_menu()
-send(menu)
 
 print(menu)
+
+send(menu)
