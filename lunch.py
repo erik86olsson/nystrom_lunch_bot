@@ -66,7 +66,7 @@ def fetch_menu():
         "Vego"
     ]
 
-    result = [f"🍽️ {day}\n"]
+    result = [f"{day}\n"]
 
     for i, category in enumerate(categories):
 
